@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { User } from "models/User";
+import passport from "passport";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -53,11 +54,57 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: "1h" }
     );
 
-    // Exclude password from user details
-    const { password: _, ...userDetails } = user.toJSON();
-
-    res.json({ token, user: userDetails });
+    res.json({ token });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
+};
+
+export const verify = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(403).json({ message: "Authorization denied" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      userId: string;
+    };
+
+    const user = await User.findOne({ where: { id: decoded.userId } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Exclude password from user details
+    const { password: _, ...userDetails } = user.toJSON();
+
+    res.json({ user: userDetails });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const googleAuth = passport.authenticate("google", {
+  scope: ["profile", "email"],
+});
+
+export const googleAuthCallback = (req: Request, res: Response) => {
+  passport.authenticate("google", (err: Error | null, user: User) => {
+    if (err) {
+      return res.status(500).json({ message: "Server error" });
+    }
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token });
+  })(req, res);
 };

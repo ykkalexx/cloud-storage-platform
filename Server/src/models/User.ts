@@ -6,6 +6,7 @@ export interface UserAttributes {
   email: string;
   password: string;
   role: "user" | "admin";
+  googleId?: string;
 }
 
 export class User extends Model<UserAttributes> implements UserAttributes {
@@ -14,6 +15,7 @@ export class User extends Model<UserAttributes> implements UserAttributes {
   public email!: string;
   public password!: string;
   public role!: "user" | "admin";
+  public googleId!: string;
 
   public static initialize(sequelize: Sequelize): void {
     User.init(
@@ -22,6 +24,10 @@ export class User extends Model<UserAttributes> implements UserAttributes {
           type: DataTypes.INTEGER.UNSIGNED,
           autoIncrement: true,
           primaryKey: true,
+        },
+        googleId: {
+          type: DataTypes.STRING,
+          allowNull: true,
         },
         username: {
           type: DataTypes.STRING,

@@ -16,7 +16,6 @@ Systems to Implement
 
 Implement user registration and login
 Set up OAuth2 for secure authentication
-Develop role-based access control (RBAC)
 
 2. File Storage and Retrieval System
 
@@ -37,8 +36,7 @@ Implement caching strategies for frequently accessed data
 
 5. API Development
 
-Design and implement RESTful APIs for file operations
-Develop APIs for user management and authentication
+Design and implement RESTful APIs for file operationsx
 
 6. Frontend User Interface
 

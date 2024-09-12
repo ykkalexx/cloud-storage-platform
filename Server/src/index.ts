@@ -4,6 +4,7 @@ import { authRouter } from "./routes/authRoutes";
 import { sequelize } from "./config/database";
 import http from "http";
 import cors from "cors";
+import { Request, Response, NextFunction } from "express";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ app.use(cors(corsOptions));
 
 app.use("/auth", authRouter);
 
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).send("Something broke!");
 });
