@@ -7,6 +7,7 @@ import cors from "cors";
 import { Request, Response, NextFunction } from "express";
 import { connectToDB } from "config/database";
 import cookieParser from "cookie-parser";
+import { filesRouter } from "routes/filesRoutes";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 app.use("/auth", authRouter);
+app.use("/file", filesRouter);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
