@@ -1,6 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import { Request as ExpressRequest, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "models/User";
+
+interface Request extends ExpressRequest {
+  user?: User;
+}
 
 export const authenticateToken = async (
   req: Request,
