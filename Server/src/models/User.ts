@@ -1,56 +1,35 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import mongoose from "mongoose";
 
-export interface UserAttributes {
-  id: number;
-  username: string;
-  email: string;
-  password: string;
-  role: "user" | "admin";
-  googleId?: string;
-}
-
-export class User extends Model<UserAttributes> implements UserAttributes {
-  public id!: number;
-  public username!: string;
-  public email!: string;
-  public password!: string;
-  public role!: "user" | "admin";
-  public googleId!: string;
-
-  public static initialize(sequelize: Sequelize): void {
-    User.init(
-      {
-        id: {
-          type: DataTypes.INTEGER.UNSIGNED,
-          autoIncrement: true,
-          primaryKey: true,
-        },
-        googleId: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        username: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        email: {
-          type: DataTypes.STRING,
-          allowNull: false,
-          unique: true,
-        },
-        password: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        role: {
-          type: DataTypes.ENUM("user", "admin"),
-          defaultValue: "user",
-        },
+const userSchema = new mongoose.Schema(
+  {
+    googleId: {
+      type: String, // Google users will have this ID
+      required: false,
+    },
+    username: {
+      type: String,
+      required: true, // Required for both Google and local users
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: function () {
+        return !this.googleId; // Password is required only if googleId is not present (i.e., for local users)
       },
-      {
-        sequelize,
-        tableName: "users",
-      }
-    );
-  }
-}
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+  },
+  { timestamps: true }
+); // Automatically adds createdAt and updatedAt fields
+
+const User = mongoose.model("User", userSchema);
+
+export default User;

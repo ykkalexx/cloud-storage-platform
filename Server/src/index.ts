@@ -1,10 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import { authRouter } from "./routes/authRoutes";
-import { sequelize } from "./config/database";
+import mongoose from "mongoose";
 import http from "http";
 import cors from "cors";
 import { Request, Response, NextFunction } from "express";
+import { connectToDB } from "config/database";
 
 dotenv.config();
 
@@ -35,12 +36,10 @@ const startServer = () => {
   });
 };
 
-const connectDatabase = () => {
-  sequelize
-    .sync({ force: false })
-    .then(() => console.log("Database connected & tables created"))
-    .catch((err) => console.error("Error connecting to the database: ", err));
-};
-
-connectDatabase();
-startServer();
+// Use the connectToDB function instead of inline connection logic
+connectToDB()
+  .then(() => startServer())
+  .catch((err) => {
+    console.error("Error starting the server: ", err);
+    process.exit(1);
+  });

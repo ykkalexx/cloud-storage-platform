@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User } from "models/User";
+import User from "models/User";
 import passport from "passport";
 
 export const register = async (req: Request, res: Response) => {
@@ -9,7 +9,7 @@ export const register = async (req: Request, res: Response) => {
     const { username, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -19,11 +19,13 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
-    await User.create({
+    const user = new User({
       username,
       email,
       password: hashedPassword,
     });
+
+    await user.save();
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
@@ -36,7 +38,7 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -49,7 +51,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user._id },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
@@ -71,13 +73,13 @@ export const verify = async (req: Request, res: Response) => {
       userId: string;
     };
 
-    const user = await User.findOne({ where: { id: decoded.userId } });
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Exclude password from user details
-    const { password: _, ...userDetails } = user.toJSON();
+    const { password: _, ...userDetails } = user.toObject();
 
     res.json({ user: userDetails });
   } catch (error) {
@@ -90,7 +92,7 @@ export const googleAuth = passport.authenticate("google", {
 });
 
 export const googleAuthCallback = (req: Request, res: Response) => {
-  passport.authenticate("google", (err: Error | null, user: User) => {
+  passport.authenticate("google", (err: Error | null, user: any) => {
     if (err) {
       return res.status(500).json({ message: "Server error" });
     }
@@ -100,7 +102,7 @@ export const googleAuthCallback = (req: Request, res: Response) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user._id },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );

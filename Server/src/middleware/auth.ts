@@ -1,9 +1,9 @@
 import { Request as ExpressRequest, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "models/User";
+import User from "models/User";
 
 interface Request extends ExpressRequest {
-  user?: User;
+  user?: any;
 }
 
 export const authenticateToken = async (
@@ -18,9 +18,9 @@ export const authenticateToken = async (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-      userId: number;
+      userId: string;
     };
-    const user = await User.findByPk(decoded.userId);
+    const user = await User.findById(decoded.userId);
 
     if (!user) {
       return res.sendStatus(403);
