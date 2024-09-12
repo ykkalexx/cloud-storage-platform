@@ -5,10 +5,18 @@ import {
   uploadFileController,
 } from "controllers/fileControllers";
 import express from "express";
+import { authenticateToken } from "middleware/auth";
+import multer from "multer";
 
 export const filesRouter = express.Router();
+const upload = multer({ dest: "uploads/" });
 
-filesRouter.post("/upload", uploadFileController);
-filesRouter.get("/download/:id", getFileController);
-filesRouter.get("/list", listFilesController);
-filesRouter.delete("/delete/:id", deleteFileController);
+filesRouter.post(
+  "/upload",
+  authenticateToken,
+  upload.single("file"),
+  uploadFileController
+);
+filesRouter.get("/download/:id", authenticateToken, getFileController);
+filesRouter.get("/list", authenticateToken, listFilesController);
+filesRouter.delete("/delete/:id", authenticateToken, deleteFileController);
