@@ -36,7 +36,6 @@ const startServer = () => {
   });
 };
 
-// Use the connectToDB function instead of inline connection logic
 connectToDB()
   .then(() => startServer())
   .catch((err) => {

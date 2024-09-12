@@ -4,14 +4,12 @@ import axios from "axios";
 interface AuthContextType {
   isAuthenticated: boolean;
   user: any | null;
-  login: (token: string) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
-  login: () => {},
   logout: () => {},
 });
 
@@ -22,39 +20,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Verify token and set authentication state
-      verifyToken(token);
-    }
+    const checkAuthStatus = async () => {
+      try {
+        const response = await axios.get("/auth/verify", {
+          withCredentials: true,
+        });
+        setIsAuthenticated(true);
+        setUser(response.data.user);
+      } catch (error) {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+
+    checkAuthStatus();
   }, []);
 
-  const verifyToken = async (token: string) => {
-    try {
-      const response = await axios.get("/auth/verify", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setIsAuthenticated(true);
-      setUser(response.data.user);
-    } catch (error) {
-      console.error("Token verification failed:", error);
-      logout();
-    }
-  };
-
-  const login = (token: string) => {
-    localStorage.setItem("token", token);
-    verifyToken(token);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
+  const logout = async () => {
+    await axios.post("/auth/logout", {}, { withCredentials: true });
     setIsAuthenticated(false);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, logout }}>
       {children}
     </AuthContext.Provider>
   );
