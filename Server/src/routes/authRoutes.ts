@@ -10,8 +10,8 @@ import { authenticateToken } from "middleware/auth";
 
 export const authRouter = express.Router();
 
-authRouter.post("/register", authenticateToken, register);
-authRouter.post("/login", authenticateToken, login);
+authRouter.post("/register", register);
+authRouter.post("/login", login);
 authRouter.get("/verify", authenticateToken, verify);
 authRouter.get("/google", googleAuth);
 authRouter.get("/google/callback", googleAuthCallback);

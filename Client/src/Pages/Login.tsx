@@ -14,11 +14,13 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3000/auth/login", {
+      await axios.post("http://localhost:3000/auth/login", {
         email,
         password,
       });
-      login(response.data.token);
+
+      // After login, call the login function from the AuthContext
+      await login();
       navigate("/dashboard");
     } catch (error) {
       setError("Invalid email or password");

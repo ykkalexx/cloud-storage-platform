@@ -4,12 +4,14 @@ import axios from "axios";
 interface AuthContextType {
   isAuthenticated: boolean;
   user: any | null;
+  login: () => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
+  login: () => {},
   logout: () => {},
 });
 
@@ -36,6 +38,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkAuthStatus();
   }, []);
 
+  const login = async () => {
+    try {
+      const response = await axios.get("/auth/verify", {
+        withCredentials: true,
+      });
+      setIsAuthenticated(true);
+      setUser(response.data.user);
+    } catch (error) {
+      setIsAuthenticated(false);
+      setUser(null);
+    }
+  };
+
   const logout = async () => {
     await axios.post("/auth/logout", {}, { withCredentials: true });
     setIsAuthenticated(false);
@@ -43,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, logout, login }}>
       {children}
     </AuthContext.Provider>
   );

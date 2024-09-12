@@ -6,6 +6,7 @@ import http from "http";
 import cors from "cors";
 import { Request, Response, NextFunction } from "express";
 import { connectToDB } from "config/database";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ const corsOptions = {
 
 app.use(express.json());
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 app.use("/auth", authRouter);
 
