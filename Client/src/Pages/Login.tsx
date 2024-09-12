@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import IsLoggedIn from "../components/IsLoggedIn";
+import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -14,21 +14,24 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/auth/login", {
-        email,
-        password,
-      });
+      await axios.post(
+        "http://localhost:3000/auth/login",
+        { email, password },
+        { withCredentials: true }
+      );
+      console.log("hit");
 
-      // After login, call the login function from the AuthContext
       await login();
+      console.log("hit2");
       navigate("/dashboard");
+      console.log("hit 3");
     } catch (error) {
       setError("Invalid email or password");
     }
   };
 
   return (
-    <IsLoggedIn>
+    <RedirectIfAuthenticated>
       <div className="flex flex-col justify-center min-h-screen py-12 bg-gray-100 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">
@@ -103,7 +106,7 @@ const Login: React.FC = () => {
           </div>
         </div>
       </div>
-    </IsLoggedIn>
+    </RedirectIfAuthenticated>
   );
 };
 

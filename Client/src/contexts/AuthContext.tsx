@@ -24,12 +24,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await axios.get("/auth/verify", {
+        const response = await axios.get("http://localhost:3000/auth/verify", {
           withCredentials: true,
         });
+        console.log("yeah it works");
         setIsAuthenticated(true);
+        console.log("isAuthenticated:", isAuthenticated);
         setUser(response.data.user);
+        console.log("user:", user);
       } catch (error) {
+        console.log("Auth status check failed", error);
         setIsAuthenticated(false);
         setUser(null);
       }

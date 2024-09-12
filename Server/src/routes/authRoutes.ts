@@ -2,6 +2,7 @@ import {
   googleAuth,
   googleAuthCallback,
   login,
+  logout,
   register,
   verify,
 } from "controllers/authControllers";
@@ -15,3 +16,4 @@ authRouter.post("/login", login);
 authRouter.get("/verify", authenticateToken, verify);
 authRouter.get("/google", googleAuth);
 authRouter.get("/google/callback", googleAuthCallback);
+authRouter.post("/logout", logout);

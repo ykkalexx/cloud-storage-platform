@@ -71,7 +71,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const verify = async (req: Request, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.accessToken; // Use cookies to get the token
     if (!token) {
       return res.status(403).json({ message: "Authorization denied" });
     }
@@ -140,4 +140,10 @@ export const refreshToken = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(403).json({ message: "Invalid refresh token" });
   }
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.cookie("accessToken", "", { maxAge: 0 });
+  res.cookie("refreshToken", "", { maxAge: 0 });
+  res.json({ message: "Logged out successfully" });
 };

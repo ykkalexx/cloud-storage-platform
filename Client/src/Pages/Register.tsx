@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import IsLoggedIn from "../components/IsLoggedIn";
+import IsLoggedIn from "../components/RedirectIfAuthenticated";
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState("");
