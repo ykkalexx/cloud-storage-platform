@@ -4,6 +4,7 @@ import {
   getFileUrl,
   deleteFile,
   uploadFileChunk,
+  reassembleFile,
 } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
