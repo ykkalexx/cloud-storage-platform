@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { uploadFile, getFileUrl, deleteFile } from "services/S3Service";
+import {
+  uploadFile,
+  getFileUrl,
+  deleteFile,
+  uploadFileChunk,
+} from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
 
@@ -86,5 +91,56 @@ export const deleteFileController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Internal server error");
+  }
+};
+
+export const uploadChunkController = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" });
+    }
+
+    const { chunkIndex, totalChunks, fileName } = req.body;
+    const user = req.user as IUser;
+
+    const key = await uploadFileChunk(
+      req.file.buffer,
+      fileName,
+      parseInt(chunkIndex),
+      user.id.toString()
+    );
+
+    res.status(200).json({ message: "Chunk uploaded successfully", key });
+  } catch (error) {
+    console.error("Error uploading chunk:", error);
+    res.status(500).json({ message: "Error uploading chunk" });
+  }
+};
+
+export const completeUploadController = async (req: Request, res: Response) => {
+  try {
+    const { fileName, totalChunks } = req.body;
+    const user = req.user as IUser;
+
+    // Reassemble the file from the chunks
+    const fileKey = `${user.id.toString()}/${fileName}`;
+    const fileSize = await reassembleFile(fileKey, parseInt(totalChunks));
+
+    // Create file record in database
+    const file = new File({
+      name: fileName,
+      key: fileKey,
+      size: fileSize,
+      userId: user.id.toString(),
+    });
+
+    await file.save();
+
+    res
+      .status(201)
+      .json({ message: "File uploaded successfully", fileId: file._id });
+  } catch (error) {
+    console.error("Error completing upload:", error);
+    res.status(500).json({ message: "Error completing upload" });
   }
 };

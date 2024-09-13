@@ -3,7 +3,7 @@ Tech Stack
 
 Backend: Node.js with TypeScript
 Frontend: React.js with TypeScript
-Database: MySQL for metadata storage
+Database: MongoDb for metadata storage
 Caching: Redis
 Object Storage: AWS S3
 Authentication: OAuth2

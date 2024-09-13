@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+
 const FileUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -11,9 +14,27 @@ const FileUpload: React.FC = () => {
     }
   };
 
+  const uploadChunk = async (
+    chunk: Blob,
+    chunkIndex: number,
+    totalChunks: number
+  ) => {
+    const formData = new FormData();
+    formData.append("chunk", chunk);
+    formData.append("chunkIndex", chunkIndex.toString());
+    formData.append("totalChunks", totalChunks.toString());
+    formData.append("fileName", file!.name);
+
+    await axios.post("http://localhost:3000/file/upload-chunk", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) return;
 
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
