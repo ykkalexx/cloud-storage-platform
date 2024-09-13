@@ -11,7 +11,8 @@ import { authenticateToken } from "middleware/auth";
 import multer from "multer";
 
 export const filesRouter = express.Router();
-const upload = multer({ dest: "uploads/" });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 filesRouter.post(
   "/upload",

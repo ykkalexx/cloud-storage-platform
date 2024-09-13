@@ -36,15 +36,28 @@ const FileUpload: React.FC = () => {
 
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
-      await axios.post("http://localhost:3000/file/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        await uploadChunk(chunk, i, totalChunks);
+        setProgress(((i + 1) / totalChunks) * 100);
+      }
+
+      await axios.post(
+        "http://localhost:3000/file/complete-upload",
+        {
+          fileName: file.name,
+          totalChunks: totalChunks,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
       alert("File uploaded successfully");
+      setProgress(0);
+      setFile(null);
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Error uploading file");
@@ -65,6 +78,7 @@ const FileUpload: React.FC = () => {
       >
         {uploading ? "Uploading..." : "Upload"}
       </button>
+      {progress > 0 && <progress value={progress} max="100" />}
     </div>
   );
 };

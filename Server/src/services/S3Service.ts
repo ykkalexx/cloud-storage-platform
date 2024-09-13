@@ -31,7 +31,10 @@ export const uploadFile = async (file: Express.Multer.File, userId: string) => {
   return key;
 };
 
-export const reassembleFile = async (fileKey: string, totalChunks: number) => {
+export const reassembleFile = async (
+  fileKey: string,
+  totalChunks: number
+): Promise<number> => {
   let reassembledFile = Buffer.alloc(0);
 
   for (let i = 0; i < totalChunks; i++) {
@@ -41,8 +44,11 @@ export const reassembleFile = async (fileKey: string, totalChunks: number) => {
       Key: chunkKey,
     });
 
+    console.log(`Fetching chunk ${i} from S3 with key ${chunkKey}`);
+
     const response = await s3Client.send(command);
     const chunkBuffer = await streamToBuffer(response.Body as Readable);
+
     reassembledFile = Buffer.concat([reassembledFile, chunkBuffer]);
 
     // Delete the chunk after reassembly
@@ -71,7 +77,10 @@ const streamToBuffer = (stream: Readable): Promise<Buffer> => {
     const chunks: Buffer[] = [];
     stream.on("data", (chunk) => chunks.push(chunk));
     stream.on("error", reject);
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("end", () => {
+      const buffer = Buffer.concat(chunks);
+      resolve(buffer);
+    });
   });
 };
 
@@ -81,14 +90,18 @@ export const uploadFileChunk = async (
   chunkIndex: number,
   userId: string
 ) => {
+  if (!chunk || !Buffer.isBuffer(chunk)) {
+    throw new Error("Invalid chunk provided");
+  }
+
   const key = `${userId}/${fileName}/chunk-${chunkIndex}`;
-  const params = new PutObjectCommand({
+  const params = {
     Bucket: process.env.AWS_S3_BUCKET!,
     Key: key,
     Body: chunk,
-  });
+  };
 
-  await s3Client.send(params);
+  await s3Client.send(new PutObjectCommand(params));
   return key;
 };
 

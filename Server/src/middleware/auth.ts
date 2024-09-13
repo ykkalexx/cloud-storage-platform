@@ -10,14 +10,9 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("Request headers:", req.headers);
-  console.log("Request cookies:", req.cookies);
-
   const token = req.cookies.accessToken;
-  console.log("Token:", token);
 
   if (!token) {
-    console.log("No token provided");
     return res.status(401).json({ message: "Unauthorized access" });
   }
 

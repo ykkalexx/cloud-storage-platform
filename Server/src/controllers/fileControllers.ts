@@ -104,11 +104,28 @@ export const uploadChunkController = async (req: Request, res: Response) => {
     const { chunkIndex, totalChunks, fileName } = req.body;
     const user = req.user as IUser;
 
+    console.log(
+      `Uploading chunk ${chunkIndex} of ${totalChunks} for file ${fileName}`
+    );
+
+    const buffer = req.file.buffer;
+    console.log(`Buffer type: ${typeof buffer}`);
+    console.log(`Buffer isBuffer: ${Buffer.isBuffer(buffer)}`);
+    console.log(`Buffer size: ${buffer ? buffer.length : "undefined"}`);
+
+    if (!buffer || !Buffer.isBuffer(buffer)) {
+      throw new Error("Invalid buffer provided");
+    }
+
     const key = await uploadFileChunk(
-      req.file.buffer,
+      buffer,
       fileName,
       parseInt(chunkIndex),
       user.id.toString()
+    );
+
+    console.log(
+      `Chunk ${chunkIndex} uploaded with key ${key} and size ${buffer.length}`
     );
 
     res.status(200).json({ message: "Chunk uploaded successfully", key });
@@ -123,9 +140,13 @@ export const completeUploadController = async (req: Request, res: Response) => {
     const { fileName, totalChunks } = req.body;
     const user = req.user as IUser;
 
+    console.log(`Reassembling file ${fileName} from ${totalChunks} chunks`);
+
     // Reassemble the file from the chunks
     const fileKey = `${user.id.toString()}/${fileName}`;
     const fileSize = await reassembleFile(fileKey, parseInt(totalChunks));
+
+    console.log(`Reassembled file size: ${fileSize}`);
 
     // Create file record in database
     const file = new File({
