@@ -86,7 +86,11 @@ export const deleteFileController = async (req: Request, res: Response) => {
       return res.status(403).send("Unauthorized");
     }
 
+    // Delete the file from S3
     await deleteFile(file.key);
+
+    // Delete the file from the database
+    await File.findByIdAndDelete(req.params.id);
 
     res.send("File deleted successfully");
   } catch (error) {

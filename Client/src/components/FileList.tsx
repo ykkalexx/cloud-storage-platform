@@ -36,6 +36,19 @@ const FileList: React.FC = () => {
     }
   };
 
+  const handleDelete = async (fileId: string) => {
+    try {
+      await axios.delete(`http://localhost:3000/file/delete/${fileId}`, {
+        withCredentials: true,
+      });
+      setFiles(files.filter((file) => file._id !== fileId));
+      alert("File deleted successfully");
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      alert("Error deleting file");
+    }
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Your Files</h2>
@@ -56,6 +69,12 @@ const FileList: React.FC = () => {
               onClick={() => handleDownload(file._id)}
             >
               Download
+            </button>
+            <button
+              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              onClick={() => handleDelete(file._id)}
+            >
+              Delete
             </button>
           </li>
         ))}
