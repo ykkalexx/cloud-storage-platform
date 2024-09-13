@@ -3,14 +3,7 @@ import { uploadFile, getFileUrl, deleteFile } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
 
-interface RequestWithUser extends Request {
-  user?: IUser;
-}
-
-export const uploadFileController = async (
-  req: RequestWithUser,
-  res: Response
-) => {
+export const uploadFileController = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).send("No file provided");
@@ -20,10 +13,11 @@ export const uploadFileController = async (
       return res.status(401).send("User not authenticated");
     }
 
-    const user = req.user;
+    const user = req.user as IUser;
+    console.log(user);
 
     // Upload the file to S3
-    const key = await uploadFile(req.file, user.id);
+    const key = await uploadFile(req.file, user.id.toString());
 
     // Save file metadata to the database
     const file = new File({
@@ -43,6 +37,7 @@ export const uploadFileController = async (
     res.status(500).send("Internal server error");
   }
 };
+
 export const getFileController = async (req: Request, res: Response) => {
   try {
     const file = await File.findById(req.params.id);
@@ -61,7 +56,9 @@ export const getFileController = async (req: Request, res: Response) => {
 
 export const listFilesController = async (req: Request, res: Response) => {
   try {
-    const files = await File.find({ userId: req.user!._id });
+    const user = req.user as IUser;
+
+    const files = await File.find({ userId: user.id });
     res.json(files);
   } catch (error) {
     console.error(error);
@@ -77,12 +74,13 @@ export const deleteFileController = async (req: Request, res: Response) => {
       return res.status(404).send("File not found");
     }
 
-    if (file.userId.toString() !== req.user!._id) {
+    const user = req.user as IUser;
+
+    if (file.userId.toString() !== user.id.toString()) {
       return res.status(403).send("Unauthorized");
     }
 
     await deleteFile(file.key);
-    await file.remove();
 
     res.send("File deleted successfully");
   } catch (error) {
