@@ -8,6 +8,7 @@ import { Request, Response, NextFunction } from "express";
 import { connectToDB } from "config/database";
 import cookieParser from "cookie-parser";
 import { filesRouter } from "routes/filesRoutes";
+import { scheduledCleanupTask } from "scheduledTasks/cleanupTask";
 
 dotenv.config();
 
@@ -32,6 +33,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).send("Something broke!");
 });
+
+scheduledCleanupTask();
 
 const startServer = () => {
   const server = http.createServer(app);

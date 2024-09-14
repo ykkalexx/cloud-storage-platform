@@ -8,6 +8,7 @@ import {
 } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
+import IncompleteUpload from "models/IncompleteUpload";
 
 export const uploadFileController = async (req: Request, res: Response) => {
   try {
@@ -108,14 +109,7 @@ export const uploadChunkController = async (req: Request, res: Response) => {
     const { chunkIndex, totalChunks, fileName } = req.body;
     const user = req.user as IUser;
 
-    console.log(
-      `Uploading chunk ${chunkIndex} of ${totalChunks} for file ${fileName}`
-    );
-
     const buffer = req.file.buffer;
-    console.log(`Buffer type: ${typeof buffer}`);
-    console.log(`Buffer isBuffer: ${Buffer.isBuffer(buffer)}`);
-    console.log(`Buffer size: ${buffer ? buffer.length : "undefined"}`);
 
     if (!buffer || !Buffer.isBuffer(buffer)) {
       throw new Error("Invalid buffer provided");
@@ -128,8 +122,13 @@ export const uploadChunkController = async (req: Request, res: Response) => {
       user.id.toString()
     );
 
-    console.log(
-      `Chunk ${chunkIndex} uploaded with key ${key} and size ${buffer.length}`
+    await IncompleteUpload.findOneAndUpdate(
+      { userId: user.id.toString(), fileName },
+      {
+        $set: { chunkCount: parseInt(totalChunks), lastUpdated: new Date() },
+        $addToSet: { uploadedChunks: parseInt(chunkIndex) },
+      },
+      { upsert: true, new: true }
     );
 
     res.status(200).json({ message: "Chunk uploaded successfully", key });
@@ -144,13 +143,21 @@ export const completeUploadController = async (req: Request, res: Response) => {
     const { fileName, totalChunks } = req.body;
     const user = req.user as IUser;
 
-    console.log(`Reassembling file ${fileName} from ${totalChunks} chunks`);
+    // Check if all chunks are uploaded
+    const incompleteUpload = await IncompleteUpload.findOne({
+      userId: user.id.toString(),
+      fileName,
+    });
+    if (
+      !incompleteUpload ||
+      incompleteUpload.uploadedChunks.length !== parseInt(totalChunks)
+    ) {
+      return res.status(400).json({ message: "Upload is incomplete" });
+    }
 
     // Reassemble the file from the chunks
     const fileKey = `${user.id.toString()}/${fileName}`;
     const fileSize = await reassembleFile(fileKey, parseInt(totalChunks));
-
-    console.log(`Reassembled file size: ${fileSize}`);
 
     // Create file record in database
     const file = new File({
@@ -161,6 +168,9 @@ export const completeUploadController = async (req: Request, res: Response) => {
     });
 
     await file.save();
+
+    // Remove the incomplete upload record
+    await IncompleteUpload.findByIdAndDelete(incompleteUpload._id);
 
     res
       .status(201)
