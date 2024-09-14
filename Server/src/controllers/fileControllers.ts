@@ -10,6 +10,10 @@ import File from "models/File";
 import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
 
+/* 
+This is the old upload file controller, created before the chunked upload feature was implemented.
+It is no longer needed and can be removed.
+*/
 export const uploadFileController = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -106,7 +110,7 @@ export const uploadChunkController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No file provided" });
     }
 
-    const { chunkIndex, totalChunks, fileName } = req.body;
+    const { chunkIndex, totalChunks, fileName, parentId } = req.body;
     const user = req.user as IUser;
 
     const buffer = req.file.buffer;
@@ -115,7 +119,20 @@ export const uploadChunkController = async (req: Request, res: Response) => {
       throw new Error("Invalid buffer provided");
     }
 
-    const key = await uploadFileChunk(
+    let key = `${user.id.toString()}/${fileName}/chunk-${chunkIndex}`;
+    if (parentId) {
+      const parentFolder = await File.findOne({
+        _id: parentId,
+        userId: user.id.toString(),
+        isFolder: true,
+      });
+      if (!parentFolder) {
+        return res.status(404).json({ message: "Parent folder not found" });
+      }
+      key = `${parentFolder.key}${fileName}/chunk-${chunkIndex}`;
+    }
+
+    await uploadFileChunk(
       buffer,
       fileName,
       parseInt(chunkIndex),
@@ -155,9 +172,24 @@ export const completeUploadController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Upload is incomplete" });
     }
 
+    const { parentId } = req.body;
+
     // Reassemble the file from the chunks
-    const fileKey = `${user.id.toString()}/${fileName}`;
+    let fileKey = `${user.id.toString()}/${fileName}`;
     const fileSize = await reassembleFile(fileKey, parseInt(totalChunks));
+
+    // If the file is being uploaded to a folder, update the key
+    if (parentId) {
+      const parentFolder = await File.findOne({
+        _id: parentId,
+        userId: user.id.toString(),
+        isFolder: true,
+      });
+      if (!parentFolder) {
+        return res.status(404).json({ message: "Parent folder not found" });
+      }
+      fileKey = `${parentFolder.key}${req.file.originalname}`;
+    }
 
     // Create file record in database
     const file = new File({
@@ -165,6 +197,7 @@ export const completeUploadController = async (req: Request, res: Response) => {
       key: fileKey,
       size: fileSize,
       userId: user.id.toString(),
+      parent: parentId || null,
     });
 
     await file.save();
