@@ -1,6 +1,15 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-const userSchema = new mongoose.Schema(
+export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
+  googleId?: string;
+  username: string;
+  email: string;
+  password?: string;
+  role: "user" | "admin";
+}
+
+const userSchema = new Schema<IUser>(
   {
     googleId: {
       type: String, // Google users will have this ID
@@ -27,9 +36,9 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
   },
-  { timestamps: true }
-); // Automatically adds createdAt and updatedAt fields
+  { timestamps: true } // Automatically adds createdAt and updatedAt fields
+);
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
 
 export default User;

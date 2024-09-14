@@ -1,2 +1,5 @@
 .env
 Server/node_modules
+Server/uploads
+Server/.DS_Store
+.DS_Store

@@ -12,7 +12,9 @@ export const authenticateToken = (
 ) => {
   const token = req.cookies.accessToken;
 
-  if (!token) return res.status(401).json({ message: "Unauthorized access" });
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized access" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
@@ -21,6 +23,7 @@ export const authenticateToken = (
     req.user = { id: decoded.userId };
     next();
   } catch (error) {
+    console.log("Invalid token");
     return res.status(403).json({ message: "Invalid token" });
   }
 };
