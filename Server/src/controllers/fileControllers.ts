@@ -157,7 +157,7 @@ export const uploadChunkController = async (req: Request, res: Response) => {
 
 export const completeUploadController = async (req: Request, res: Response) => {
   try {
-    const { fileName, totalChunks } = req.body;
+    const { fileName, totalChunks, parentId } = req.body;
     const user = req.user as IUser;
 
     // Check if all chunks are uploaded
@@ -171,8 +171,6 @@ export const completeUploadController = async (req: Request, res: Response) => {
     ) {
       return res.status(400).json({ message: "Upload is incomplete" });
     }
-
-    const { parentId } = req.body;
 
     // Reassemble the file from the chunks
     let fileKey = `${user.id.toString()}/${fileName}`;
@@ -188,7 +186,7 @@ export const completeUploadController = async (req: Request, res: Response) => {
       if (!parentFolder) {
         return res.status(404).json({ message: "Parent folder not found" });
       }
-      fileKey = `${parentFolder.key}${req.file.originalname}`;
+      fileKey = `${parentFolder.key}${fileName}`;
     }
 
     // Create file record in database
