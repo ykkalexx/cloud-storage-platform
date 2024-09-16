@@ -5,11 +5,17 @@ import {
   deleteFile,
   uploadFileChunk,
   reassembleFile,
+  moveFileInS3,
+  renameFileInS3,
 } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
 
+/* 
+This is the old upload file controller, created before the chunked upload feature was implemented.
+It is no longer needed and can be removed.
+*/
 export const uploadFileController = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -106,7 +112,7 @@ export const uploadChunkController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No file provided" });
     }
 
-    const { chunkIndex, totalChunks, fileName } = req.body;
+    const { chunkIndex, totalChunks, fileName, parentId } = req.body;
     const user = req.user as IUser;
 
     const buffer = req.file.buffer;
@@ -115,7 +121,20 @@ export const uploadChunkController = async (req: Request, res: Response) => {
       throw new Error("Invalid buffer provided");
     }
 
-    const key = await uploadFileChunk(
+    let key = `${user.id.toString()}/${fileName}/chunk-${chunkIndex}`;
+    if (parentId) {
+      const parentFolder = await File.findOne({
+        _id: parentId,
+        userId: user.id.toString(),
+        isFolder: true,
+      });
+      if (!parentFolder) {
+        return res.status(404).json({ message: "Parent folder not found" });
+      }
+      key = `${parentFolder.key}${fileName}/chunk-${chunkIndex}`;
+    }
+
+    await uploadFileChunk(
       buffer,
       fileName,
       parseInt(chunkIndex),
@@ -140,7 +159,7 @@ export const uploadChunkController = async (req: Request, res: Response) => {
 
 export const completeUploadController = async (req: Request, res: Response) => {
   try {
-    const { fileName, totalChunks } = req.body;
+    const { fileName, totalChunks, parentId } = req.body;
     const user = req.user as IUser;
 
     // Check if all chunks are uploaded
@@ -156,8 +175,21 @@ export const completeUploadController = async (req: Request, res: Response) => {
     }
 
     // Reassemble the file from the chunks
-    const fileKey = `${user.id.toString()}/${fileName}`;
+    let fileKey = `${user.id.toString()}/${fileName}`;
     const fileSize = await reassembleFile(fileKey, parseInt(totalChunks));
+
+    // If the file is being uploaded to a folder, update the key
+    if (parentId) {
+      const parentFolder = await File.findOne({
+        _id: parentId,
+        userId: user.id.toString(),
+        isFolder: true,
+      });
+      if (!parentFolder) {
+        return res.status(404).json({ message: "Parent folder not found" });
+      }
+      fileKey = `${parentFolder.key}${fileName}`;
+    }
 
     // Create file record in database
     const file = new File({
@@ -165,6 +197,7 @@ export const completeUploadController = async (req: Request, res: Response) => {
       key: fileKey,
       size: fileSize,
       userId: user.id.toString(),
+      parent: parentId || null,
     });
 
     await file.save();
@@ -178,5 +211,108 @@ export const completeUploadController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error completing upload:", error);
     res.status(500).json({ message: "Error completing upload" });
+  }
+};
+
+export const moveFile = async (req: Request, res: Response) => {
+  try {
+    const { fileId, newParentId } = req.body;
+    const user = req.user as IUser;
+    const userId = user.id.toString();
+
+    const file = await File.findOne({ _id: fileId, userId });
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    let newParentKey = userId;
+    if (newParentId) {
+      const newParent = await File.findOne({
+        _id: newParentId,
+        userId,
+        isFolder: true,
+      });
+
+      if (!newParent) {
+        return res
+          .status(404)
+          .json({ message: "Destination folder not found" });
+      }
+
+      // Construct the new parent key (folder path)
+      newParentKey = newParent.key;
+    }
+
+    const oldKey = file.key;
+    const newKey = `${newParentKey}${file.name}`.replace(/\\/g, "/");
+
+    console.log(`Old Key: ${oldKey}, New Key: ${newKey}`);
+
+    // If the file is not being moved to a new location, skip the S3 move
+    if (oldKey === newKey) {
+      return res
+        .status(400)
+        .json({ message: "File is already in the selected location" });
+    }
+
+    // Move the file in S3 if it's not a folder
+    if (!file.isFolder) {
+      await moveFileInS3(oldKey, newKey);
+    }
+
+    // Update the file key and parent in the database
+    file.key = newKey;
+    file.parent = newParentId || null;
+    await file.save();
+
+    res.json({ message: "File moved successfully" });
+  } catch (error) {
+    console.error("Error moving file:", error);
+    res.status(500).json({ message: "Error moving file" });
+  }
+};
+
+export const renameFileOrFolder = async (req: Request, res: Response) => {
+  try {
+    const { id, newName } = req.body;
+    const user = req.user as IUser;
+    const userId = user.id.toString();
+
+    const file = await File.findOne({ _id: id, userId });
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    // Check if a file/folder with the new name already exists in the same directory
+    const existingFile = await File.findOne({
+      name: newName,
+      parent: file.parent,
+      userId,
+      _id: { $ne: file._id },
+    });
+
+    if (existingFile) {
+      return res
+        .status(400)
+        .json({ message: "A file or folder with this name already exists" });
+    }
+
+    const oldName = file.name;
+    file.name = newName;
+
+    // If it's a file (not a folder), update the S3 key
+    if (!file.isFolder) {
+      const oldKey = file.key;
+      const newKey = oldKey.replace(oldName, newName);
+      await renameFileInS3(oldKey, newKey);
+      file.key = newKey;
+    }
+
+    await file.save();
+
+    res.json({ message: "File or folder renamed successfully", file });
+  } catch (error) {
+    console.error("Error renaming file or folder:", error);
+    res.status(500).json({ message: "Error renaming file or folder" });
   }
 };

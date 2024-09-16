@@ -3,9 +3,12 @@ import {
   deleteFileController,
   getFileController,
   listFilesController,
+  moveFile,
+  renameFileOrFolder,
   uploadChunkController,
   uploadFileController,
 } from "controllers/fileControllers";
+import { createFolder, getContents } from "controllers/folderControllers";
 import express from "express";
 import { authenticateToken } from "middleware/auth";
 import multer from "multer";
@@ -34,3 +37,7 @@ filesRouter.post(
   authenticateToken,
   completeUploadController
 );
+filesRouter.post("/folder", authenticateToken, createFolder);
+filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
+filesRouter.post("/move", authenticateToken, moveFile);
+filesRouter.post("/rename", authenticateToken, renameFileOrFolder);

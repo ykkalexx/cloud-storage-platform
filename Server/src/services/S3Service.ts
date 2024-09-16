@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  CopyObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
@@ -19,7 +21,7 @@ export const s3Client = new S3Client({
 });
 
 export const uploadFile = async (file: Express.Multer.File, userId: string) => {
-  const key = `${userId}/${Date.now()}-${file.originalname}`;
+  const key = `${userId}/${file.originalname}`;
   const params = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET!,
     Key: key,
@@ -115,6 +117,55 @@ export const getFileUrl = async (key: string) => {
   return url;
 };
 
+// Move file between two keys in S3
+export const moveFileInS3 = async (oldKey: string, newKey: string) => {
+  console.log(`Moving file from ${oldKey} to ${newKey}`);
+
+  // Check if the source key exists
+  const headParams = new HeadObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: oldKey,
+  });
+
+  try {
+    await s3Client.send(headParams);
+    console.log(`Source key exists: ${oldKey}`);
+  } catch (error) {
+    console.error(`Source key does not exist: ${oldKey}`, error);
+    throw new Error(`Source key does not exist: ${oldKey}`);
+  }
+
+  const copySource = `${process.env.AWS_S3_BUCKET}/${oldKey}`;
+  const encodedCopySource = encodeURIComponent(copySource);
+
+  const copyParams = new CopyObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    CopySource: encodedCopySource,
+    Key: newKey,
+  });
+
+  try {
+    await s3Client.send(copyParams);
+    console.log(`File copied from ${oldKey} to ${newKey}`);
+  } catch (error) {
+    console.error(`Error copying file from ${oldKey} to ${newKey}:`, error);
+    throw error;
+  }
+
+  const deleteCommand = new DeleteObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: oldKey,
+  });
+
+  try {
+    await s3Client.send(deleteCommand);
+    console.log(`File deleted with key ${oldKey}`);
+  } catch (error) {
+    console.error(`Error deleting file with key ${oldKey}:`, error);
+    throw error;
+  }
+};
+
 export const deleteFile = async (key: string) => {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET!,
@@ -128,4 +179,21 @@ export const deleteFile = async (key: string) => {
     console.error(`Error deleting file with key ${key} from S3:`, error);
     throw error;
   }
+};
+
+export const renameFileInS3 = async (oldKey: string, newKey: string) => {
+  const copyCommand = new CopyObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    CopySource: `${process.env.AWS_S3_BUCKET}/${oldKey}`,
+    Key: newKey,
+  });
+
+  await s3Client.send(copyCommand);
+
+  const deleteCommand = new DeleteObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: oldKey,
+  });
+
+  await s3Client.send(deleteCommand);
 };

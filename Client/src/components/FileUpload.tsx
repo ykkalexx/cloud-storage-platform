@@ -3,7 +3,15 @@ import axios from "axios";
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 
-const FileUpload: React.FC = () => {
+interface FileUploadProps {
+  parentId: string | null;
+  onUploadComplete: () => void;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({
+  parentId,
+  onUploadComplete,
+}) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -24,6 +32,7 @@ const FileUpload: React.FC = () => {
     formData.append("chunkIndex", chunkIndex.toString());
     formData.append("totalChunks", totalChunks.toString());
     formData.append("fileName", file!.name);
+    formData.append("parentId", parentId || "");
 
     await axios.post("http://localhost:3000/file/upload-chunk", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -49,6 +58,7 @@ const FileUpload: React.FC = () => {
         {
           fileName: file.name,
           totalChunks: totalChunks,
+          parentId: parentId || "",
         },
         {
           withCredentials: true,
@@ -58,6 +68,7 @@ const FileUpload: React.FC = () => {
       alert("File uploaded successfully");
       setProgress(0);
       setFile(null);
+      onUploadComplete();
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Error uploading file");

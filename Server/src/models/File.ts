@@ -10,6 +10,12 @@ const fileSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isFolder: { type: Boolean, default: false },
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "File",
+      default: null,
+    },
   },
   { timestamps: true }
 );

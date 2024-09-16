@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "../hooks/useAuth";
-import FileUpload from "../components/FileUpload";
-import FileList from "../components/FileList";
+
+import FileExplorer from "../components/FileExplorer";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -14,8 +14,7 @@ const Dashboard: React.FC = () => {
       <p>
         This is a protected route. Only authenticated users can see this page.
       </p>
-      <FileUpload />
-      <FileList />
+      <FileExplorer />
     </div>
   );
 };
