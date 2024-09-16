@@ -3,6 +3,7 @@ import {
   deleteFileController,
   getFileController,
   listFilesController,
+  moveFile,
   uploadChunkController,
   uploadFileController,
 } from "controllers/fileControllers";
@@ -37,3 +38,4 @@ filesRouter.post(
 );
 filesRouter.post("/folder", authenticateToken, createFolder);
 filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
+filesRouter.post("/move", authenticateToken, moveFile);

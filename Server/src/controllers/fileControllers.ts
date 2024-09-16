@@ -5,10 +5,14 @@ import {
   deleteFile,
   uploadFileChunk,
   reassembleFile,
+  moveFileInS3,
+  s3Client,
 } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import path from "path";
 
 /* 
 This is the old upload file controller, created before the chunked upload feature was implemented.
@@ -209,5 +213,63 @@ export const completeUploadController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error completing upload:", error);
     res.status(500).json({ message: "Error completing upload" });
+  }
+};
+
+export const moveFile = async (req: Request, res: Response) => {
+  try {
+    const { fileId, newParentId } = req.body;
+    const user = req.user as IUser;
+    const userId = user.id.toString();
+
+    const file = await File.findOne({ _id: fileId, userId });
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    let newParentKey = userId;
+    if (newParentId) {
+      const newParent = await File.findOne({
+        _id: newParentId,
+        userId,
+        isFolder: true,
+      });
+
+      if (!newParent) {
+        return res
+          .status(404)
+          .json({ message: "Destination folder not found" });
+      }
+
+      // Construct the new parent key (folder path)
+      newParentKey = newParent.key;
+    }
+
+    const oldKey = file.key;
+    const newKey = `${newParentKey}${file.name}`.replace(/\\/g, "/");
+
+    console.log(`Old Key: ${oldKey}, New Key: ${newKey}`);
+
+    // If the file is not being moved to a new location, skip the S3 move
+    if (oldKey === newKey) {
+      return res
+        .status(400)
+        .json({ message: "File is already in the selected location" });
+    }
+
+    // Move the file in S3 if it's not a folder
+    if (!file.isFolder) {
+      await moveFileInS3(oldKey, newKey);
+    }
+
+    // Update the file key and parent in the database
+    file.key = newKey;
+    file.parent = newParentId || null;
+    await file.save();
+
+    res.json({ message: "File moved successfully" });
+  } catch (error) {
+    console.error("Error moving file:", error);
+    res.status(500).json({ message: "Error moving file" });
   }
 };
