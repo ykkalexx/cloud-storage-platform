@@ -20,6 +20,8 @@ const FileExplorer: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folderName, setFolderName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     fetchFiles();
@@ -65,6 +67,35 @@ const FileExplorer: React.FC = () => {
     }
   };
 
+  const handleRename = async (id: string) => {
+    setRenamingId(id);
+
+    const file = files.find((f) => f._id === id);
+    if (file) {
+      setNewName(file.name);
+    }
+  };
+
+  const submitRename = async () => {
+    if (!renamingId || !newName.trim()) return;
+
+    try {
+      await axios.post(
+        "http://localhost:3000/file/rename",
+        {
+          id: renamingId,
+          newName: newName.trim(),
+        },
+        { withCredentials: true }
+      );
+      setRenamingId(null);
+      setNewName("");
+      fetchFiles();
+    } catch (error) {
+      console.error("Error renaming file/folder:", error);
+    }
+  };
+
   const handleBackClick = async () => {
     if (!currentFolder) return;
     try {
@@ -100,6 +131,19 @@ const FileExplorer: React.FC = () => {
     } catch (error) {
       console.error("Error deleting file:", error);
       alert("Error deleting file");
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    try {
+      await axios.delete(`http://localhost:3000/file/folder/${folderId}`, {
+        withCredentials: true,
+      });
+      setFiles(files.filter((file) => file._id !== folderId));
+      alert("Folder deleted successfully");
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      alert("Error deleting folder");
     }
   };
 
@@ -210,29 +254,59 @@ const FileExplorer: React.FC = () => {
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                         className="p-4 bg-white rounded shadow hover:bg-gray-100 cursor-pointer"
-                        onClick={() => handleFileClick(file)} // Attach onClick event here
+                        onClick={() => handleFileClick(file)}
                       >
-                        <div className="flex items-center">
-                          <span className="mr-2 text-2xl">
-                            {file.isFolder ? "📁" : "📄"}
-                          </span>
-                          <span className="flex-grow">{file.name}</span>
-                          {!file.isFolder && (
-                            <>
-                              <span className="text-sm text-gray-500">
-                                {`(${(file.size / 1024 / 1024).toFixed(2)} MB)`}
+                        {renamingId === file._id ? (
+                          <div>
+                            <input
+                              type="text"
+                              value={newName}
+                              onChange={(e) => setNewName(e.target.value)}
+                              onBlur={submitRename}
+                              onKeyPress={(e) =>
+                                e.key === "Enter" && submitRename()
+                              }
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between p-2 bg-white rounded shadow hover:bg-gray-100 cursor-pointer">
+                            <div className="flex items-center">
+                              <span className="mr-2 text-2xl">
+                                {file.isFolder ? "📁" : "📄"}
                               </span>
+                              <span className="flex-grow">{file.name}</span>
+                              {!file.isFolder && (
+                                <span className="text-sm text-gray-500 ml-2">
+                                  {`(${(file.size / 1024 / 1024).toFixed(
+                                    2
+                                  )} MB)`}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
                               <button
-                                className="ml-2 bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                                className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDownload(file._id);
+                                  handleRename(file._id);
                                 }}
                               >
-                                Download
+                                Rename
                               </button>
+                              {!file.isFolder && (
+                                <button
+                                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownload(file._id);
+                                  }}
+                                >
+                                  Download
+                                </button>
+                              )}
                               <button
-                                className="ml-2 bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(file._id);
@@ -240,9 +314,9 @@ const FileExplorer: React.FC = () => {
                               >
                                 Delete
                               </button>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </div>
+                        )}
                         {file.isFolder && (
                           <Droppable droppableId={file._id}>
                             {(provided) => (

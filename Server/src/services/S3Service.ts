@@ -180,3 +180,20 @@ export const deleteFile = async (key: string) => {
     throw error;
   }
 };
+
+export const renameFileInS3 = async (oldKey: string, newKey: string) => {
+  const copyCommand = new CopyObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    CopySource: `${process.env.AWS_S3_BUCKET}/${oldKey}`,
+    Key: newKey,
+  });
+
+  await s3Client.send(copyCommand);
+
+  const deleteCommand = new DeleteObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: oldKey,
+  });
+
+  await s3Client.send(deleteCommand);
+};

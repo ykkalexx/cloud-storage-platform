@@ -6,13 +6,11 @@ import {
   uploadFileChunk,
   reassembleFile,
   moveFileInS3,
-  s3Client,
+  renameFileInS3,
 } from "services/S3Service";
 import File from "models/File";
 import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
-import path from "path";
 
 /* 
 This is the old upload file controller, created before the chunked upload feature was implemented.
@@ -271,5 +269,50 @@ export const moveFile = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error moving file:", error);
     res.status(500).json({ message: "Error moving file" });
+  }
+};
+
+export const renameFileOrFolder = async (req: Request, res: Response) => {
+  try {
+    const { id, newName } = req.body;
+    const user = req.user as IUser;
+    const userId = user.id.toString();
+
+    const file = await File.findOne({ _id: id, userId });
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    // Check if a file/folder with the new name already exists in the same directory
+    const existingFile = await File.findOne({
+      name: newName,
+      parent: file.parent,
+      userId,
+      _id: { $ne: file._id },
+    });
+
+    if (existingFile) {
+      return res
+        .status(400)
+        .json({ message: "A file or folder with this name already exists" });
+    }
+
+    const oldName = file.name;
+    file.name = newName;
+
+    // If it's a file (not a folder), update the S3 key
+    if (!file.isFolder) {
+      const oldKey = file.key;
+      const newKey = oldKey.replace(oldName, newName);
+      await renameFileInS3(oldKey, newKey);
+      file.key = newKey;
+    }
+
+    await file.save();
+
+    res.json({ message: "File or folder renamed successfully", file });
+  } catch (error) {
+    console.error("Error renaming file or folder:", error);
+    res.status(500).json({ message: "Error renaming file or folder" });
   }
 };

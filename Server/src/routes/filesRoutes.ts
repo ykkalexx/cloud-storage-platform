@@ -4,6 +4,7 @@ import {
   getFileController,
   listFilesController,
   moveFile,
+  renameFileOrFolder,
   uploadChunkController,
   uploadFileController,
 } from "controllers/fileControllers";
@@ -39,3 +40,4 @@ filesRouter.post(
 filesRouter.post("/folder", authenticateToken, createFolder);
 filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
 filesRouter.post("/move", authenticateToken, moveFile);
+filesRouter.post("/rename", authenticateToken, renameFileOrFolder);
