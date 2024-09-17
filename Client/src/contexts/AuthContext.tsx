@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         setUser(response.data.user);
         setToken(response.data.token);
-        console.log("user:", user);
       } catch (error) {
         setIsAuthenticated(false);
         setUser(null);

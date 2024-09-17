@@ -15,6 +15,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (token) {
+      console.log("hit 20");
       initializeSocket(token);
     }
   }, [token]);
