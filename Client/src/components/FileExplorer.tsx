@@ -22,6 +22,9 @@ const FileExplorer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [sharingFile, setSharingFile] = useState<string | null>(null);
+  const [shareEmail, setShareEmail] = useState("");
+  const [sharePermission, setSharePermission] = useState("read");
 
   useEffect(() => {
     fetchFiles();
@@ -39,6 +42,35 @@ const FileExplorer: React.FC = () => {
       console.error("Error fetching files:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShare = async (fileId: string) => {
+    setSharingFile(fileId);
+  };
+
+  const submitShare = async () => {
+    if (!sharingFile) return;
+
+    try {
+      console.log("Sharing file:", sharingFile);
+      await axios.post(
+        "http://localhost:3000/file/share-file",
+        {
+          fileId: sharingFile,
+          sharedWithEmail: shareEmail,
+          permission: sharePermission,
+        },
+        { withCredentials: true }
+      );
+
+      alert("File shared successfully");
+      setSharingFile(null);
+      setShareEmail("");
+      setSharePermission("read");
+    } catch (error) {
+      console.error("Error sharing file:", error);
+      alert("Error sharing file");
     }
   };
 
@@ -134,19 +166,6 @@ const FileExplorer: React.FC = () => {
     }
   };
 
-  const handleDeleteFolder = async (folderId: string) => {
-    try {
-      await axios.delete(`http://localhost:3000/file/folder/${folderId}`, {
-        withCredentials: true,
-      });
-      setFiles(files.filter((file) => file._id !== folderId));
-      alert("Folder deleted successfully");
-    } catch (error) {
-      console.error("Error deleting folder:", error);
-      alert("Error deleting folder");
-    }
-  };
-
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
@@ -160,8 +179,6 @@ const FileExplorer: React.FC = () => {
     ) {
       return;
     }
-
-    console.log(destination.droppableId);
 
     const movedItem = files.find((file) => file._id === draggableId);
     if (!movedItem) return;
@@ -177,16 +194,12 @@ const FileExplorer: React.FC = () => {
           newParentId,
         };
 
-        console.log("Destination droppableId:", destination.droppableId);
-        console.log("Payload being sent to backend:", payload);
-
         const response = await axios.post(
           "http://localhost:3000/file/move",
           payload,
           { withCredentials: true }
         );
 
-        console.log("Response from backend:", response.data);
         fetchFiles();
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -206,27 +219,27 @@ const FileExplorer: React.FC = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="p-4 bg-gray-100 min-h-screen">
-        <h2 className="text-2xl font-bold mb-4">File Explorer</h2>
+      <div className="min-h-screen p-4 bg-gray-100">
+        <h2 className="mb-4 text-2xl font-bold">File Explorer</h2>
         {currentFolder && (
           <button
             onClick={handleBackClick}
-            className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 mb-4 text-white bg-blue-500 rounded hover:bg-blue-600"
           >
             Back
           </button>
         )}
-        <div className="mb-4 flex items-center">
+        <div className="flex items-center mb-4">
           <input
             type="text"
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
             placeholder="New folder name"
-            className="border p-2 rounded mr-2 flex-grow"
+            className="flex-grow p-2 mr-2 border rounded"
           />
           <button
             onClick={handleCreateFolder}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
           >
             Create Folder
           </button>
@@ -238,7 +251,7 @@ const FileExplorer: React.FC = () => {
           <Droppable droppableId={currentFolder || "root"}>
             {(provided) => (
               <ul
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4"
+                className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
@@ -253,7 +266,7 @@ const FileExplorer: React.FC = () => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="p-4 bg-white rounded shadow hover:bg-gray-100 cursor-pointer"
+                        className="p-4 bg-white rounded shadow cursor-pointer hover:bg-gray-100"
                         onClick={() => handleFileClick(file)}
                       >
                         {renamingId === file._id ? (
@@ -270,23 +283,79 @@ const FileExplorer: React.FC = () => {
                             />
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between p-2 bg-white rounded shadow hover:bg-gray-100 cursor-pointer">
+                          <div className="flex items-center justify-between p-2 bg-white rounded shadow cursor-pointer hover:bg-gray-100">
                             <div className="flex items-center">
                               <span className="mr-2 text-2xl">
                                 {file.isFolder ? "📁" : "📄"}
                               </span>
                               <span className="flex-grow">{file.name}</span>
                               {!file.isFolder && (
-                                <span className="text-sm text-gray-500 ml-2">
+                                <span className="ml-2 text-sm text-gray-500">
                                   {`(${(file.size / 1024 / 1024).toFixed(
                                     2
                                   )} MB)`}
                                 </span>
                               )}
                             </div>
+                            {sharingFile && (
+                              <div className="fixed inset-0 z-10 overflow-y-auto">
+                                <div className="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                  <div className="fixed inset-0 transition-opacity">
+                                    <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+                                  </div>
+                                  <span className="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
+                                  &#8203;
+                                  <div className="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                    <div className="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
+                                      <div className="sm:flex sm:items-start">
+                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                          <input
+                                            type="email"
+                                            value={shareEmail}
+                                            onChange={(e) =>
+                                              setShareEmail(e.target.value)
+                                            }
+                                            placeholder="Enter email to share with"
+                                            className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+                                          />
+                                          <select
+                                            value={sharePermission}
+                                            onChange={(e) =>
+                                              setSharePermission(e.target.value)
+                                            }
+                                            className="block w-full px-4 py-2 pr-8 leading-tight bg-white border border-gray-400 rounded shadow appearance-none hover:border-gray-500 focus:outline-none focus:shadow-outline"
+                                          >
+                                            <option value="read">Read</option>
+                                            <option value="download">
+                                              Download
+                                            </option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                                      <button
+                                        onClick={submitShare}
+                                        type="button"
+                                        className="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                      >
+                                        Share
+                                      </button>
+                                      <button
+                                        onClick={() => setSharingFile(null)}
+                                        type="button"
+                                        className="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center space-x-2">
                               <button
-                                className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                                className="px-2 py-1 text-white bg-yellow-500 rounded hover:bg-yellow-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRename(file._id);
@@ -296,7 +365,18 @@ const FileExplorer: React.FC = () => {
                               </button>
                               {!file.isFolder && (
                                 <button
-                                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                                  className="px-2 py-1 text-white bg-indigo-500 rounded hover:bg-indigo-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleShare(file._id);
+                                  }}
+                                >
+                                  Share
+                                </button>
+                              )}
+                              {!file.isFolder && (
+                                <button
+                                  className="px-2 py-1 text-white bg-blue-500 rounded hover:bg-blue-600"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDownload(file._id);
@@ -306,7 +386,7 @@ const FileExplorer: React.FC = () => {
                                 </button>
                               )}
                               <button
-                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                className="px-2 py-1 text-white bg-red-500 rounded hover:bg-red-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(file._id);

@@ -11,6 +11,7 @@ import {
 import File from "models/File";
 import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
+import Share from "models/Share";
 
 /* 
 This is the old upload file controller, created before the chunked upload feature was implemented.
@@ -57,6 +58,17 @@ export const getFileController = async (req: Request, res: Response) => {
 
     if (!file) {
       return res.status(404).send("File not found");
+    }
+
+    const user = req.user as IUser;
+    const userId = user.id.toString();
+
+    const hasAccess =
+      file.userId.equals(userId) ||
+      (await Share.exists({ file, sharedWith: userId }));
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
     const url = await getFileUrl(file.key);

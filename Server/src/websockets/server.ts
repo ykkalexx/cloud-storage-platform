@@ -1,18 +1,13 @@
 import { Server as HttpServer } from "http";
-import { Server, Socket } from "socket.io";
-import { authenticateToken } from "middleware/auth";
+import { Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { initializeSocket } from "./socketManager";
 
 dotenv.config();
 
 export const setupWebSocket = (httpServer: HttpServer) => {
-  const io = new Server(httpServer, {
-    cors: {
-      origin: "http://localhost:5173",
-      methods: ["GET", "POST"],
-    },
-  });
+  const io = initializeSocket(httpServer);
 
   io.use(async (socket: Socket, next) => {
     const token = socket.handshake.auth.token;
@@ -35,7 +30,7 @@ export const setupWebSocket = (httpServer: HttpServer) => {
   io.on("connection", (socket: Socket) => {
     console.log("New client connected");
 
-    socket.join(socket.data.user._id);
+    socket.join(socket.data.user.id);
 
     socket.on("disconnect", () => {
       console.log("Client disconnected");

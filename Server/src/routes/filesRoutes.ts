@@ -9,6 +9,7 @@ import {
   uploadFileController,
 } from "controllers/fileControllers";
 import { createFolder, getContents } from "controllers/folderControllers";
+import { getSharedFiles, shareFile } from "controllers/shareControllers";
 import express from "express";
 import { authenticateToken } from "middleware/auth";
 import multer from "multer";
@@ -41,3 +42,5 @@ filesRouter.post("/folder", authenticateToken, createFolder);
 filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
 filesRouter.post("/move", authenticateToken, moveFile);
 filesRouter.post("/rename", authenticateToken, renameFileOrFolder);
+filesRouter.post("/share-file", authenticateToken, shareFile);
+filesRouter.get("/shared", authenticateToken, getSharedFiles);
