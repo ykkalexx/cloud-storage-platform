@@ -4,7 +4,7 @@ import File from "../models/File";
 import User, { IUser } from "../models/User";
 import { getIO } from "websockets/socketManager";
 
-export const shareFile = async (req: Request, res: Response) => {
+export const shareFileController = async (req: Request, res: Response) => {
   try {
     console.log("hit shareFile");
     const { fileId, sharedWithEmail, permission } = req.body;
