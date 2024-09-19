@@ -238,6 +238,8 @@ export const moveFile = async (req: Request, res: Response) => {
     }
 
     let newParentKey = userId;
+    let oldParent = file.parent;
+
     if (newParentId) {
       const newParent = await File.findOne({
         _id: newParentId,

@@ -36,7 +36,6 @@ Adding a search feature to find files across all folders.
 4. File Sharing and Collaboration System
 
 Real-time File and Folder Updates: Users see changes to files and folders instantly.
-Live Sharing Notifications: Users receive immediate notifications when files are shared with them.
 File Access Tracking: File owners can see in real-time when their files are viewed or downloaded.
 
 5. Search and Indexing System

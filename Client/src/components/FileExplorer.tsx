@@ -7,6 +7,7 @@ import {
   Draggable,
   DropResult,
 } from "react-beautiful-dnd";
+import { getSocket } from "../services/websockes";
 
 interface FileItem {
   _id: string;
@@ -44,6 +45,25 @@ const FileExplorer: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    socket.on("file_updated", (data) => {
+      if (data.type === "add") {
+        setFiles((prevFiles) => [...prevFiles, data.file]);
+      } else if (data.type === "delete") {
+        setFiles((prevFiles) =>
+          prevFiles.filter((file) => file._id !== data.fileId)
+        );
+      }
+      // Handle 'move' if needed
+    });
+
+    return () => {
+      socket.off("file_updated");
+    };
+  }, []);
 
   const handleShare = async (fileId: string) => {
     setSharingFile(fileId);
@@ -145,9 +165,12 @@ const FileExplorer: React.FC = () => {
 
   const handleDownload = async (fileId: string) => {
     try {
-      const response = await axios.get(`http://localhost:3000/file/${fileId}`, {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `http://localhost:3000/file/download/${fileId}`,
+        {
+          withCredentials: true,
+        }
+      );
       window.open(response.data.url, "_blank");
     } catch (error) {
       console.error("Error downloading file:", error);
@@ -221,23 +244,23 @@ const FileExplorer: React.FC = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="min-h-screen p-4 bg-gray-100">
-        <h2 className="mb-4 text-2xl font-bold">File Explorer</h2>
+      <div className="min-h-screen p-6 bg-gray-100">
+        <h2 className="mb-6 text-3xl font-bold">File Explorer</h2>
         {currentFolder && (
           <button
             onClick={handleBackClick}
-            className="px-4 py-2 mb-4 text-white bg-blue-500 rounded hover:bg-blue-600"
+            className="px-4 py-2 mb-6 text-white bg-blue-500 rounded hover:bg-blue-600"
           >
             Back
           </button>
         )}
-        <div className="flex items-center mb-4">
+        <div className="flex items-center mb-6 space-x-4">
           <input
             type="text"
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
             placeholder="New folder name"
-            className="flex-grow p-2 mr-2 border rounded"
+            className="flex-grow p-2 border rounded"
           />
           <button
             onClick={handleCreateFolder}
@@ -248,12 +271,12 @@ const FileExplorer: React.FC = () => {
         </div>
         <FileUpload parentId={currentFolder} onUploadComplete={fetchFiles} />
         {loading ? (
-          <p>loading...</p>
+          <p>Loading...</p>
         ) : (
           <Droppable droppableId={currentFolder || "root"}>
             {(provided) => (
               <ul
-                className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                className="flex flex-col gap-4 mt-6"
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
@@ -282,80 +305,27 @@ const FileExplorer: React.FC = () => {
                                 e.key === "Enter" && submitRename()
                               }
                               autoFocus
+                              className="w-full p-2 border rounded"
                             />
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between p-2 bg-white rounded shadow cursor-pointer hover:bg-gray-100">
-                            <div className="flex items-center">
-                              <span className="mr-2 text-2xl">
-                                {file.isFolder ? "📁" : "📄"}
-                              </span>
-                              <span className="flex-grow">{file.name}</span>
-                              {!file.isFolder && (
-                                <span className="ml-2 text-sm text-gray-500">
-                                  {`(${(file.size / 1024 / 1024).toFixed(
-                                    2
-                                  )} MB)`}
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-2xl">
+                                  {file.isFolder ? "📁" : "📄"}
                                 </span>
-                              )}
-                            </div>
-                            {sharingFile && (
-                              <div className="fixed inset-0 z-10 overflow-y-auto">
-                                <div className="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                                  <div className="fixed inset-0 transition-opacity">
-                                    <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-                                  </div>
-                                  <span className="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
-                                  &#8203;
-                                  <div className="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                    <div className="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
-                                      <div className="sm:flex sm:items-start">
-                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                          <input
-                                            type="email"
-                                            value={shareEmail}
-                                            onChange={(e) =>
-                                              setShareEmail(e.target.value)
-                                            }
-                                            placeholder="Enter email to share with"
-                                            className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-                                          />
-                                          <select
-                                            value={sharePermission}
-                                            onChange={(e) =>
-                                              setSharePermission(e.target.value)
-                                            }
-                                            className="block w-full px-4 py-2 pr-8 leading-tight bg-white border border-gray-400 rounded shadow appearance-none hover:border-gray-500 focus:outline-none focus:shadow-outline"
-                                          >
-                                            <option value="read">Read</option>
-                                            <option value="download">
-                                              Download
-                                            </option>
-                                          </select>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
-                                      <button
-                                        onClick={submitShare}
-                                        type="button"
-                                        className="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                                      >
-                                        Share
-                                      </button>
-                                      <button
-                                        onClick={() => setSharingFile(null)}
-                                        type="button"
-                                        className="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
+                                <span className="font-medium">{file.name}</span>
+                                {!file.isFolder && (
+                                  <span className="text-sm text-gray-500">
+                                    {`(${(file.size / 1024 / 1024).toFixed(
+                                      2
+                                    )} MB)`}
+                                  </span>
+                                )}
                               </div>
-                            )}
-                            <div className="flex items-center space-x-2">
+                            </div>
+                            <div className="flex flex-row items-center justify-center gap-10">
                               <button
                                 className="px-2 py-1 text-white bg-yellow-500 rounded hover:bg-yellow-600"
                                 onClick={(e) => {
