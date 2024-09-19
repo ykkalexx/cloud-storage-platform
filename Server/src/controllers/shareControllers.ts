@@ -13,7 +13,8 @@ export const shareFileController = async (req: Request, res: Response) => {
 
     console.log(`fileId: ${fileId}, ownerId: ${ownerId}`);
 
-    const file = await File.findOne({ _id: fileId, owner: ownerId });
+    const file = await File.findOne({ _id: fileId });
+    console.log("file: ", file);
     if (!file) {
       return res.status(404).json({ message: "File not found" });
     }

@@ -54,11 +54,17 @@ const FileExplorer: React.FC = () => {
 
     try {
       console.log("Sharing file:", sharingFile);
-      await axios.post("http://localhost:3000/file/share-file", {
-        fileId: sharingFile,
-        sharedWithEmail: shareEmail,
-        permission: sharePermission,
-      });
+      await axios.post(
+        "http://localhost:3000/share/share",
+        {
+          fileId: sharingFile,
+          sharedWithEmail: shareEmail,
+          permission: sharePermission,
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       alert("File shared successfully");
       setSharingFile(null);

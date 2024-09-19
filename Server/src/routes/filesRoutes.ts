@@ -45,5 +45,3 @@ filesRouter.post("/folder", authenticateToken, createFolder);
 filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
 filesRouter.post("/move", authenticateToken, moveFile);
 filesRouter.post("/rename", authenticateToken, renameFileOrFolder);
-filesRouter.post("/share-file", authenticateToken, shareFileController);
-filesRouter.get("/shared", getSharedFiles);

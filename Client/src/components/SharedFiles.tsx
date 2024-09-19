@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-interface sharedFiles {
+interface SharedFile {
   _id: string;
   fileId: {
     _id: string;
@@ -12,19 +12,21 @@ interface sharedFiles {
     username: string;
     email: string;
   };
+  sharedWith: string;
   permission: string;
 }
 
 const SharedFiles: React.FC = () => {
-  const [sharedFiles, setSharedFiles] = useState<sharedFiles[]>([]);
+  const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([]);
 
   useEffect(() => {
     const fetchedSharedFiles = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/file/shared", {
+        const response = await axios.get("http://localhost:3000/share/shared", {
           withCredentials: true,
         });
-        setSharedFiles(response.data);
+        console.log(response.data);
+        setSharedFiles(response.data.sharedFiles);
       } catch (error) {
         console.error("Error fetching shared files:", error);
       }
