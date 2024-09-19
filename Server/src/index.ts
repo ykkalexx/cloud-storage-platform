@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import { authRouter } from "./routes/authRoutes";
-import mongoose from "mongoose";
 import http from "http";
 import cors from "cors";
 import { Request, Response, NextFunction } from "express";
@@ -9,6 +8,8 @@ import { connectToDB } from "config/database";
 import cookieParser from "cookie-parser";
 import { filesRouter } from "routes/filesRoutes";
 import { scheduledCleanupTask } from "scheduledTasks/cleanupTask";
+import { setupWebSocket } from "websockets/server";
+import { shareRouter } from "routes/shareRoutes";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(cookieParser());
 
 app.use("/auth", authRouter);
 app.use("/file", filesRouter);
+app.use("/share", shareRouter);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
@@ -38,6 +40,7 @@ scheduledCleanupTask();
 
 const startServer = () => {
   const server = http.createServer(app);
+  const io = setupWebSocket(server);
   server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });

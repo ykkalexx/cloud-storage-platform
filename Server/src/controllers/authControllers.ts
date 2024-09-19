@@ -88,7 +88,7 @@ export const verify = async (req: Request, res: Response) => {
     // Exclude password from user details
     const { password: _, ...userDetails } = user.toObject();
 
-    res.json({ user: userDetails });
+    res.json({ user: userDetails, token });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

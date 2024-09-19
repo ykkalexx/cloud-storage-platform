@@ -9,6 +9,10 @@ import {
   uploadFileController,
 } from "controllers/fileControllers";
 import { createFolder, getContents } from "controllers/folderControllers";
+import {
+  getSharedFiles,
+  shareFileController,
+} from "controllers/shareControllers";
 import express from "express";
 import { authenticateToken } from "middleware/auth";
 import multer from "multer";
