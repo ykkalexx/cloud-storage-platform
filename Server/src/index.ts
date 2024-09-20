@@ -10,6 +10,7 @@ import { filesRouter } from "routes/filesRoutes";
 import { scheduledCleanupTask } from "scheduledTasks/cleanupTask";
 import { setupWebSocket } from "websockets/server";
 import { shareRouter } from "routes/shareRoutes";
+import { publicRoutes } from "routes/publicRoutes";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use(cookieParser());
 app.use("/auth", authRouter);
 app.use("/file", filesRouter);
 app.use("/share", shareRouter);
+app.use("/public", publicRoutes);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);

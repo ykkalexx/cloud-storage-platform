@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+export interface IFile extends mongoose.Document {
+  name: string;
+  key: string;
+  size: number;
+  userId: mongoose.Types.ObjectId;
+  isFolder: boolean;
+  parent: mongoose.Types.ObjectId | null;
+}
+
 const fileSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
