@@ -37,7 +37,8 @@ const FileExplorer: React.FC = () => {
 
   const submitCreatePublicLink = async () => {
     if (!creatingPublicLink) return;
-
+    console.log(creatingPublicLink);
+    console.log(publicLinkExpiration);
     try {
       const response = await axios.post(
         "http://localhost:3000/file/public-link",

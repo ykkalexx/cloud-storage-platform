@@ -11,6 +11,7 @@ import {
 import { createFolder, getContents } from "controllers/folderControllers";
 import {
   createPublicLink,
+  getAllPublicLinks,
   revokedPublicLink,
 } from "controllers/publicLinkControllers";
 import {
@@ -55,3 +56,4 @@ filesRouter.delete(
   authenticateToken,
   revokedPublicLink
 );
+filesRouter.get("/public-links", authenticateToken, getAllPublicLinks);

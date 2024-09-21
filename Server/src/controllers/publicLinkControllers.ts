@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import PublicLink, { IPublicLink } from "../models/PublicLink";
 import File from "../models/File";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { IUser } from "models/User";
 import { GetSignedUrl } from "services/S3Service";
+import { v4 as uuidv4 } from "uuid";
 
 export const createPublicLink = async (req: Request, res: Response) => {
   try {
@@ -21,17 +21,20 @@ export const createPublicLink = async (req: Request, res: Response) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiresIn);
 
+    const token = uuidv4();
+
     const publicLink = new PublicLink({
       fileId,
       ownerId,
       expiresAt,
+      token,
     });
 
     await publicLink.save();
 
     res.status(201).json({
       message: "Public link created successfully",
-      link: `${process.env.API_URL}/public/files/${publicLink.token}`,
+      link: `${process.env.API_URL}/public/file/${publicLink.token}`,
     });
   } catch (error) {
     console.error("Error creating public link:", error);
@@ -45,7 +48,7 @@ export const getPublicFile = async (req: Request, res: Response) => {
 
     const publicLink = await PublicLink.findOne({ token }).populate("fileId");
 
-    if (!publicLink || publicLink.expiredAt < new Date()) {
+    if (!publicLink || publicLink.expiresAt < new Date()) {
       return res.status(404).json({ message: "Invalid or expired link" });
     }
 
@@ -82,5 +85,18 @@ export const revokedPublicLink = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error revoking public link:", error);
     res.status(500).json({ message: "Error revoking public link" });
+  }
+};
+
+export const getAllPublicLinks = async (req: Request, res: Response) => {
+  try {
+    const owner = req.user as IUser;
+    const ownerId = owner.id.toString();
+
+    const publicLinks = await PublicLink.find({ ownerId }).populate("fileId");
+    res.json(publicLinks);
+  } catch (error) {
+    console.error("Error getting public links:", error);
+    res.status(500).json({ message: "Error getting public links" });
   }
 };

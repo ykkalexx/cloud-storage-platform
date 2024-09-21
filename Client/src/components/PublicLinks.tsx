@@ -15,7 +15,9 @@ interface PublicLink {
 const PublicLinks: React.FC = () => {
   const [publicLinks, setPublicLinks] = useState<PublicLink[]>([]);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    fetchPublicLinks();
+  }, []);
 
   const fetchPublicLinks = async () => {
     try {
@@ -25,6 +27,7 @@ const PublicLinks: React.FC = () => {
           withCredentials: true,
         }
       );
+      console.log("links: ", response.data);
       setPublicLinks(response.data);
     } catch (error) {
       console.error("Error fetching public links:", error);
@@ -33,7 +36,9 @@ const PublicLinks: React.FC = () => {
 
   const revokePublicLink = async (linkId: string) => {
     try {
-      await axios.delete(`http://localhost:3000/file/public-link/${linkId}`);
+      await axios.delete(`http://localhost:3000/file/public-link/${linkId}`, {
+        withCredentials: true,
+      });
       fetchPublicLinks();
     } catch (error) {
       console.error("Error revoking public link:", error);

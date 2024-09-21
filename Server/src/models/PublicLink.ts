@@ -6,7 +6,7 @@ export interface IPublicLink extends mongoose.Document {
   fileId: IFile;
   ownerId: mongoose.Types.ObjectId;
   token: string;
-  expiredAt: Date;
+  expiresAt: Date;
   downloads: number;
 }
 
@@ -27,7 +27,7 @@ const publicLinkSchema = new mongoose.Schema(
       unique: true,
       required: true,
     },
-    expiredAt: {
+    expiresAt: {
       type: Date,
       required: true,
     },
