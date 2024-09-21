@@ -197,3 +197,14 @@ export const renameFileInS3 = async (oldKey: string, newKey: string) => {
 
   await s3Client.send(deleteCommand);
 };
+
+export const GetSignedUrl = async (filekey: string): Promise<string> => {
+  const params = new GetObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: filekey,
+  });
+
+  const url = await getSignedUrl(s3Client, params, { expiresIn: 3600 });
+
+  return url;
+};

@@ -10,6 +10,11 @@ import {
 } from "controllers/fileControllers";
 import { createFolder, getContents } from "controllers/folderControllers";
 import {
+  createPublicLink,
+  getAllPublicLinks,
+  revokedPublicLink,
+} from "controllers/publicLinkControllers";
+import {
   getSharedFiles,
   shareFileController,
 } from "controllers/shareControllers";
@@ -45,3 +50,10 @@ filesRouter.post("/folder", authenticateToken, createFolder);
 filesRouter.get("/contents/:folderId?", authenticateToken, getContents);
 filesRouter.post("/move", authenticateToken, moveFile);
 filesRouter.post("/rename", authenticateToken, renameFileOrFolder);
+filesRouter.post("/public-link", authenticateToken, createPublicLink);
+filesRouter.delete(
+  "/public-link/:linkId",
+  authenticateToken,
+  revokedPublicLink
+);
+filesRouter.get("/public-links", authenticateToken, getAllPublicLinks);

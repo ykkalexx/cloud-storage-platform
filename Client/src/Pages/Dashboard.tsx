@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 
 import FileExplorer from "../components/FileExplorer";
 import SharedFiles from "../components/SharedFiles";
+import PublicLinks from "../components/PublicLinks";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Dashboard: React.FC = () => {
       </p>
       <FileExplorer />
       <SharedFiles />
+      <PublicLinks />
     </div>
   );
 };
