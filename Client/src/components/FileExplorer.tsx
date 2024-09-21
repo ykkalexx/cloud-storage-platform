@@ -26,6 +26,33 @@ const FileExplorer: React.FC = () => {
   const [sharingFile, setSharingFile] = useState<string | null>(null);
   const [shareEmail, setShareEmail] = useState("");
   const [sharePermission, setSharePermission] = useState("read");
+  const [creatingPublicLink, setCreatingPublicLink] = useState<string | null>(
+    null
+  );
+  const [publicLinkExpiration, setPublicLinkExpiration] = useState(24); // set a default of 24 hours
+
+  const handleCreatePublicLink = async (fieldId: string) => {
+    setCreatingPublicLink(fieldId);
+  };
+
+  const submitCreatePublicLink = async () => {
+    if (!creatingPublicLink) return;
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/file/public-link",
+        { fileId: creatingPublicLink, expiresIn: publicLinkExpiration },
+        { withCredentials: true }
+      );
+
+      alert(`Public link created: ${response.data.link}`);
+      setCreatingPublicLink(null);
+      setPublicLinkExpiration(24);
+    } catch (error) {
+      console.error("Error creating public link:", error);
+      alert("Error creating public link");
+    }
+  };
 
   useEffect(() => {
     fetchFiles();
@@ -280,6 +307,35 @@ const FileExplorer: React.FC = () => {
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
+                {creatingPublicLink && (
+                  <div className="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="p-6 bg-white rounded">
+                      <input
+                        type="number"
+                        value={publicLinkExpiration}
+                        onChange={(e) =>
+                          setPublicLinkExpiration(parseInt(e.target.value))
+                        }
+                        placeholder="Expiration time in hours"
+                        className="w-full p-2 mb-4 border rounded"
+                      />
+                      <div className="flex items-center justify-end space-x-4">
+                        <button
+                          onClick={submitCreatePublicLink}
+                          className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
+                        >
+                          Create Public Link
+                        </button>
+                        <button
+                          onClick={() => setCreatingPublicLink(null)}
+                          className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {files.map((file, index) => (
                   <Draggable
                     key={file._id}
@@ -344,6 +400,17 @@ const FileExplorer: React.FC = () => {
                                   }}
                                 >
                                   Share
+                                </button>
+                              )}
+                              {!file.isFolder && (
+                                <button
+                                  className="px-2 py-1 text-white bg-indigo-500 rounded hover:bg-indigo-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCreatePublicLink(file._id);
+                                  }}
+                                >
+                                  Create Public Link
                                 </button>
                               )}
                               {!file.isFolder && (
