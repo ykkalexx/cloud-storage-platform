@@ -25,9 +25,15 @@ const fileSchema = new mongoose.Schema(
       ref: "File",
       default: null,
     },
+    mimeType: { type: String },
+    tags: [String],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
+
+fileSchema.index({ name: "text", tags: "text" });
 
 const File = mongoose.model("File", fileSchema);
 

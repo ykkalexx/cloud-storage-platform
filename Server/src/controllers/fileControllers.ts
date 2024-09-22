@@ -13,6 +13,12 @@ import { IUser } from "models/User";
 import IncompleteUpload from "models/IncompleteUpload";
 import Share from "models/Share";
 
+const generateTags = (name: string, mimeType: string): string[] => {
+  const nameTags = name.split(/\s+/).map((tag) => tag.toLowerCase());
+  const mimeTypeTags = mimeType.split("/").map((tag) => tag.toLowerCase());
+  return [...new Set([...nameTags, ...mimeTypeTags])];
+};
+
 /* 
 This is the old upload file controller, created before the chunked upload feature was implemented.
 It is no longer needed and can be removed.
@@ -200,8 +206,12 @@ export const completeUploadController = async (req: Request, res: Response) => {
       if (!parentFolder) {
         return res.status(404).json({ message: "Parent folder not found" });
       }
-      fileKey = `${parentFolder.key}${fileName}`;
+      fileKey = `${parentFolder.key}/${fileName}`;
     }
+
+    // Generate tags
+    const mimeType = req.body.mimeType || "application/octet-stream";
+    const tags = generateTags(fileName, mimeType);
 
     // Create file record in database
     const file = new File({
@@ -209,6 +219,8 @@ export const completeUploadController = async (req: Request, res: Response) => {
       key: fileKey,
       size: fileSize,
       userId: user.id.toString(),
+      mimeType: mimeType,
+      tags: tags,
       parent: parentId || null,
     });
 

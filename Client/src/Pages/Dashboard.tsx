@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import FileExplorer from "../components/FileExplorer";
 import SharedFiles from "../components/SharedFiles";
 import PublicLinks from "../components/PublicLinks";
+import Search from "../components/Search";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ const Dashboard: React.FC = () => {
       <p>
         This is a protected route. Only authenticated users can see this page.
       </p>
+      <Search />
       <FileExplorer />
       <SharedFiles />
       <PublicLinks />
