@@ -18,10 +18,12 @@ interface SharedFile {
 
 const SharedFiles: React.FC = () => {
   const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchedSharedFiles = async () => {
       try {
+        setLoading(true);
         const response = await axios.get("http://localhost:3000/share/shared", {
           withCredentials: true,
         });
@@ -29,11 +31,17 @@ const SharedFiles: React.FC = () => {
         setSharedFiles(response.data.sharedFiles);
       } catch (error) {
         console.error("Error fetching shared files:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchedSharedFiles();
   }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!Array.isArray(sharedFiles)) {
     return <div>Shared files data is not available</div>;
