@@ -59,6 +59,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
           fileName: file.name,
           totalChunks: totalChunks,
           parentId: parentId || "",
+          mimeType: file.type,
+          tags: JSON.stringify([]), // Add tags if needed
         },
         {
           withCredentials: true,

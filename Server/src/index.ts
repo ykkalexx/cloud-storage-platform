@@ -11,6 +11,7 @@ import { scheduledCleanupTask } from "scheduledTasks/cleanupTask";
 import { setupWebSocket } from "websockets/server";
 import { shareRouter } from "routes/shareRoutes";
 import { publicRoutes } from "routes/publicRoutes";
+import { searchRoutes } from "routes/searchRoutes";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/auth", authRouter);
 app.use("/file", filesRouter);
 app.use("/share", shareRouter);
 app.use("/public", publicRoutes);
+app.use(searchRoutes);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
