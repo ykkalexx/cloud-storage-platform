@@ -64,33 +64,6 @@ The application follows a modular architecture with clear separation of concerns
 - Paginated API responses for handling large datasets
 - Asynchronous processing for non-blocking operations
 
-  ## 🚀 Getting Started (Backend Focus)
-
-  1. Clone the repository
-   git clone https://github.com/ykkalexx/cloud-storage-platform
-
-  2. Go the the scripts folder and run InstallPackages.ps1 if on windows Machine,
-     
-     if on mac
-     cd ./Server
-     npm install
-     npm start
-     and then
-     cd ./Client
-     npm install
-     npm run dev
-
-  3. Setup .env file with the following
- 
-  PORT=3000
-  MONGODB_URI=your_mongodb_connection_string
-  JWT_SECRET=your_jwt_secret
-  JWT_REFRESH_SECRET=your_refresh_token_secret
-  AWS_ACCESS_KEY_ID=your_aws_access_key
-  AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-  AWS_REGION=your_aws_region
-  AWS_S3_BUCKET=your_s3_bucket_name
-
   ---
 
 Thank you for reviewing my Cloud Storage Platform project! This application showcases my expertise in backend development, including API design, database management, cloud integration, and implementing complex server-side logic. I'm excited about the opportunity to bring these skills to a professional backend development team and continue growing as a software engineer.
