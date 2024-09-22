@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "models/User";
 import passport from "passport";
+import rateLimit from "express-rate-limit";
 
 const generateAccessToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET as string, {

@@ -42,13 +42,3 @@ Public Link Sharing
 
 Implement search functionality for files and metadata
 Optimize search performance using indexing techniques
-
-6. Caching System
-
-Implement a caching system
-
-7. Security Implementation
-
-Implement end-to-end encryption for file storage and transfer
-Develop secure key management system
-Implement data integrity checks using hashing
