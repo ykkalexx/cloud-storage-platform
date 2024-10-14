@@ -8,7 +8,6 @@ Caching: Redis
 Object Storage: AWS S3
 Authentication: OAuth2
 Real-time Communication: WebSockets
-Containerization: Docker
 
 Systems to Implement
 

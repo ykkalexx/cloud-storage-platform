@@ -6,15 +6,12 @@ import { getIO } from "websockets/socketManager";
 
 export const shareFileController = async (req: Request, res: Response) => {
   try {
-    console.log("hit shareFile");
     const { fileId, sharedWithEmail, permission } = req.body;
     const user = req.user as IUser;
     const ownerId = user.id.toString();
 
-    console.log(`fileId: ${fileId}, ownerId: ${ownerId}`);
-
     const file = await File.findOne({ _id: fileId });
-    console.log("file: ", file);
+
     if (!file) {
       return res.status(404).json({ message: "File not found" });
     }

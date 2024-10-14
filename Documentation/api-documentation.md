@@ -6,7 +6,7 @@ This document outlines the RESTful API endpoints for the Cloud Storage Platform.
 
 ## Base URL
 
-All API requests should be made to: `https://api.cloudstorageplatform.com/v1`
+All API requests should be made to: `localhost:3000`
 
 ## Authentication
 
@@ -25,6 +25,7 @@ Authorization: Bearer <your_jwt_token>
 Register a new user.
 
 Request body:
+
 ```json
 {
   "username": "string",
@@ -34,6 +35,7 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
   "message": "User registered successfully",
@@ -46,6 +48,7 @@ Response:
 Authenticate a user and receive a JWT token.
 
 Request body:
+
 ```json
 {
   "email": "string",
@@ -54,6 +57,7 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
   "token": "string",
@@ -68,10 +72,12 @@ Response:
 Upload a file. Requires authentication.
 
 Request body (form-data):
+
 - `file`: File to upload
 - `parentFolderId` (optional): ID of the parent folder
 
 Response:
+
 ```json
 {
   "message": "File uploaded successfully",
@@ -84,6 +90,7 @@ Response:
 Retrieve file metadata. Requires authentication.
 
 Response:
+
 ```json
 {
   "id": "string",
@@ -106,6 +113,7 @@ Response: File data stream
 Delete a file. Requires authentication.
 
 Response:
+
 ```json
 {
   "message": "File deleted successfully"
@@ -119,6 +127,7 @@ Response:
 Create a new folder. Requires authentication.
 
 Request body:
+
 ```json
 {
   "name": "string",
@@ -127,6 +136,7 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
   "message": "Folder created successfully",
@@ -139,6 +149,7 @@ Response:
 List contents of a folder. Requires authentication.
 
 Response:
+
 ```json
 {
   "folders": [
@@ -167,6 +178,7 @@ Response:
 Share a file or folder. Requires authentication.
 
 Request body:
+
 ```json
 {
   "resourceId": "string",
@@ -177,6 +189,7 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
   "message": "Resource shared successfully",
@@ -189,6 +202,7 @@ Response:
 List resources shared with the authenticated user.
 
 Response:
+
 ```json
 {
   "sharedResources": [
@@ -210,12 +224,14 @@ Response:
 Search for files and folders. Requires authentication.
 
 Query parameters:
+
 - `q`: Search query string
 - `type` (optional): "file" | "folder"
 - `page` (optional): Page number for pagination
 - `limit` (optional): Number of results per page
 
 Response:
+
 ```json
 {
   "results": [
@@ -243,6 +259,7 @@ All endpoints may return the following error responses:
 - 500 Internal Server Error: Unexpected server error
 
 Error response body:
+
 ```json
 {
   "error": "string",

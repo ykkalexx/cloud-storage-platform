@@ -60,14 +60,6 @@ This document outlines the authentication process used in the Cloud Storage Plat
 2. Server invalidates the refresh token by removing it from the database
 3. Server sends a response to clear the access token cookie on the client side
 
-## Password Reset Flow
-
-1. User requests a password reset by providing their email
-2. Server generates a unique password reset token and stores it in the user document with an expiration time
-3. An email with a password reset link (including the token) is sent to the user
-4. User clicks the link and submits a new password
-5. Server verifies the token and updates the user's password if valid
-
 ## OAuth Integration (e.g., Google Sign-In)
 
 1. User initiates OAuth login (e.g., "Sign in with Google")
@@ -88,5 +80,3 @@ This document outlines the authentication process used in the Cloud Storage Plat
 - Implement rate limiting on authentication endpoints to prevent brute-force attacks
 - Use HTTPS for all communications to encrypt data in transit
 - Implement multi-factor authentication for enhanced security (optional feature)
-
-This authentication flow provides a secure and user-friendly experience while protecting against common vulnerabilities and attack vectors.
