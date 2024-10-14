@@ -10,7 +10,8 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.cookies.accessToken;
+  const token =
+    req.cookies.accessToken || req.headers["authorization"]?.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized access" });
@@ -23,7 +24,14 @@ export const authenticateToken = (
     req.user = { id: decoded.userId };
     next();
   } catch (error) {
-    console.log("Invalid token");
-    return res.status(403).json({ message: "Invalid token" });
+    console.error("Token verification failed:", error);
+    return res
+      .status(403)
+      .json({
+        message:
+          error instanceof jwt.JsonWebTokenError
+            ? "Invalid token"
+            : "Token verification failed",
+      });
   }
 };

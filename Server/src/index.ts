@@ -36,8 +36,10 @@ app.use("/public", publicRoutes);
 app.use(searchRoutes);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).send("Something broke!");
+  console.error("Error occurred:", err);
+  res
+    .status(500)
+    .json({ message: "Internal server error, please try again later." });
 });
 
 scheduledCleanupTask();
@@ -50,9 +52,21 @@ const startServer = () => {
   });
 };
 
-connectToDB()
-  .then(() => startServer())
-  .catch((err) => {
-    console.error("Error starting the server: ", err);
-    process.exit(1);
-  });
+const MAX_RETRIES = 5;
+let retryCount = 0;
+
+const connectWithRetry = () => {
+  connectToDB()
+    .then(() => startServer())
+    .catch((err) => {
+      retryCount += 1;
+      console.error(`Error starting the server (attempt ${retryCount}): `, err);
+      if (retryCount < MAX_RETRIES) {
+        setTimeout(connectWithRetry, 5000);
+      } else {
+        process.exit(1);
+      }
+    });
+};
+
+connectWithRetry();
